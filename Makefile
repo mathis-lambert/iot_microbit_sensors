@@ -3,7 +3,7 @@ all: build
 VERSION := $(shell yt --version 2> /dev/null)
 
 check:
-ifeq($VERSION),)
+ifeq ($VERSION),)
 	@echo you should use before trying anything: source /sync/Module_Dev_App_Mobile/yotta/bin/activate
 	@false
 endif
