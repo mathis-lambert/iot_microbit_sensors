@@ -1,11 +1,14 @@
 all: build
 
-patch:
-	@sed -i "s/VERSION 2.8.11/VERSION 3.0.0/" ~/.local/lib/python3.6/site-packages/yotta/lib/templates/subdir_CMakeLists.txt
-	@sed -i "s/VERSION 2.8.11/VERSION 3.0.0/" ~/.local/lib/python3.6/site-packages/yotta/lib/templates/base_CMakeLists.txt
-	@sed -i "s/^cmake_policy(SET CMP0017 OLD)/#cmake_policy(SET CMP0017 OLD)/" ~/.local/lib/python3.6/site-packages/yotta/lib/templates/base_CMakeLists.txt
+VERSION := $(shell yt --version 2> /dev/null)
 
-build: patch
+check:
+ifeq($VERSION),)
+	@echo you should use before trying anything: source /sync/Module_Dev_App_Mobile/yotta/bin/activate
+	@false
+endif
+
+build:
 	@yt build
 
 install:
