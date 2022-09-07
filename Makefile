@@ -8,13 +8,13 @@ ifeq ($VERSION),)
 	@false
 endif
 
-build:
+build: check
 	@yt build
 
-install:
+install: check
 	@cp build/bbc-microbit-classic-gcc/source/microbit-samples-combined.hex /media/$USER/MICROBIT/
 	@echo "Install done"
 
-clean:
+clean: check
 	@yt clean
 	@echo "Cleaning done"
