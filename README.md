@@ -93,6 +93,8 @@ Here is an example of `config.json` with all available options configured:
         "sram_end":"0x20004000",
         "sd_limit":"0x20002000",
         "gatt_table_start":"0x20001900"
+        "radio_max_packet_size":248,
+        "radio_max_rx_buffers":4
     }
 }
 ```
