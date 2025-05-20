@@ -2,16 +2,16 @@
  * ============================================================================
  * Fichier      : main.cpp
  * Auteur       : Mathis LAMBERT
- * Projet       : Acquisition et transmission de données BME280 chiffrées via micro:bit
+ * Projet       : Acquisition et transmission de données BME280 et TSL256x chiffrées via micro:bit
  * Date         : Mai 2025
  * Description  :
- *   Ce programme lit les données environnementales (température, humidité, pression)
- *   à partir d'un capteur BME280, les affiche sur un écran OLED, puis les transmet
+ *   Ce programme lit les données environnementales (température, humidité, pression, luminosité)
+ *   à partir d'un capteur BME280 et TSL256x, les affiche sur un écran OLED, puis les transmet
  *   en radio via le protocole personnalisé CPE (Capteurs - Payload - Encryption).
  *
  *   La trame radio est de 7 octets :
  *     - 1 octet de séquence (SEQ), servant également de nonce
- *     - 6 octets de données capteurs chiffrées (AES-128 en mode CTR)
+ *     - 9 octets de données capteurs chiffrées (AES-128 en mode CTR)
  *
  *   Le chiffrement est symétrique et utilise la bibliothèque TinyCrypt.
  *
@@ -19,6 +19,7 @@
  *   - micro:bit runtime API
  *   - bme280.h : lecture capteur
  *   - ssd1306.h : affichage OLED
+ *   - tsl256x.h : lecture capteur
  *   - cpe.h / cpe.c : protocole de chiffrement CPE
  * ============================================================================
  */
@@ -149,7 +150,7 @@
          measures.humidity_centi    = hCenti;
          measures.pressure_decihPa  = pDeci;
          measures.lux               = (int16_t)tsl_lux;
-         measures.control           = CPE_CTRL_TLH; // par défaut, tu envoies TLH (modifiable selon besoin)
+         measures.control           = CPE_CTRL_TLH; // Envoie TLH par défaut
  
          sendCPE(&measures, seq);
          seq++;
