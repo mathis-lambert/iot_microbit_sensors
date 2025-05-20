@@ -44,6 +44,7 @@
  MicroBit uBit;
  MicroBitI2C i2c(I2C_SDA0, I2C_SCL0);
  MicroBitPin oledReset(MICROBIT_ID_IO_P0, MICROBIT_PIN_P0, PIN_CAPABILITY_DIGITAL_OUT);
+ ssd1306  oled(&uBit, &i2c, &oledReset);
  
  static const char BLANK_LINE[] = "                "; // ligne vide de l'écran OLED (16 caractères)
  
@@ -107,12 +108,14 @@
  {
      PacketBuffer p = uBit.radio.datagram.recv();
      if (p.length() == CPE_PAYLOAD_LEN) {
-         cpe_measure_t m = {0};
-         if (cpe_parse_frame(p.getBytes(), &m) == 0) {
-             // Nettoie l'écran avant affichage
-             for (int i = 0; i < 4; i++) oled.display_line(i, 0, BLANK_LINE);
-             oled_display_measures(oled, m);
-         }
+        cpe_measure_t m; // Structure pour stocker les mesures
+        memset(&m, 0, sizeof(m)); // Initialise la structure à zéro
+        
+        if (cpe_parse_frame(p.getBytes(), &m) == 0) {
+            // Nettoie l'écran avant affichage
+            for (int i = 0; i < 4; i++) oled.display_line(i, 0, BLANK_LINE);
+            oled_display_measures(oled, m);
+        }
      }
  }
  
@@ -125,12 +128,18 @@
      cpe_init(KEY);
  
      bme280   bme(&uBit, &i2c);
-     ssd1306  oled(&uBit, &i2c, &oledReset);
      tsl256x  tsl(&uBit, &i2c);
+
+     // Initialisation de l'écran OLED
      oled.power_on();
  
-     uint16_t tsl_comb = 0, tsl_ir = 0, tsl_lux = 0;
+     // variables pour stocker les mesures
+     uint16_t tsl_comb = 0, tsl_ir = 0;
+        uint32_t tsl_lux = 0;
+
      uint32_t rawP; int32_t rawT; uint16_t rawH;
+
+     // Seq pour le nonce
      static uint8_t seq = 0;
  
      // Ajout handler de réception radio
