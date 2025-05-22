@@ -1,59 +1,78 @@
 #ifndef CPE_H
 #define CPE_H
-
 #include <stdint.h>
 #include <stddef.h>
 
-#define CPE_PAYLOAD_LEN    10   /* Octets envoyés sur la radio          */
-#define CPE_PLAINTEXT_LEN   9   /* Octets de données capteurs bruts     */
-#define CPE_KEY_LEN        16   /* Taille de la clé AES‑128             */
+/* ---------------- Tailles ---------------- */
+#define CPE_PLAINTEXT_LEN 11 /* 1 type + 1 id + 8 data + 1 pad      */
+#define CPE_PAYLOAD_LEN 12   /* seq (1) + chiffré (11)             */
+#define CPE_KEY_LEN 16
 
-/** Codes de modes de contrôle pour Control */
-typedef enum {
-    CPE_CTRL_TLH = 0,
-    CPE_CTRL_LTH = 1
-} cpe_ctrl_t;
+/* ---------------- Types de trame --------- */
+typedef enum
+{
+    CPE_FT_MEASURE = 0x01,
+    CPE_FT_CONTROL = 0x02
+} cpe_frame_type_t;
 
-/** Structure portant les mesures, en unités fixes :
- *  - temperature_centi : 0,01 °C  (‑327,68 à +327,67 °C)
- *  - humidity_centi    : 0,01 %RH (0 à 655,35 %)
- *  - pressure_decihPa  : 0,1 hPa  (0 à 6 553,5 hPa)
- *  - lux               : brut     (0 à 65535) 
- *  - control           : cpe_ctrl_t (0 -> 'TLH' ou 1 -> 'LTH')
- */
-typedef struct {
-    int16_t  temperature_centi;  // 0,01 °C
-    uint16_t humidity_centi;     // 0,01 %RH
-    uint16_t pressure_decihPa;   // 0,1 hPa
-    int16_t  lux;                // Intensity lumière, brut
-    uint8_t  control;            // cpe_ctrl_t
+/* ---------------- Codage ordre OLED ------ */
+typedef enum
+{
+    CPE_S_T = 0,
+    CPE_S_L = 1,
+    CPE_S_H = 2,
+    CPE_S_P = 3
+} cpe_sensor_t;
+static inline uint8_t cpe_ctrl_pack(cpe_sensor_t l0, cpe_sensor_t l1,
+                                    cpe_sensor_t l2, cpe_sensor_t l3)
+{
+    return (uint8_t)((l0 & 3U) |
+                     ((l1 & 3U) << 2) |
+                     ((l2 & 3U) << 4) |
+                     ((l3 & 3U) << 6));
+}
+static inline void cpe_ctrl_unpack(uint8_t c, cpe_sensor_t o[4])
+{
+    o[0] = (cpe_sensor_t)((c >> 0) & 3U);
+    o[1] = (cpe_sensor_t)((c >> 2) & 3U);
+    o[2] = (cpe_sensor_t)((c >> 4) & 3U);
+    o[3] = (cpe_sensor_t)((c >> 6) & 3U);
+}
+
+/* ---------------- Mesures brutes --------- */
+typedef struct
+{
+    int16_t temperature_centi;
+    uint16_t humidity_centi;
+    uint16_t pressure_decihPa;
+    int16_t lux;
 } cpe_measure_t;
 
+/* ---------------- API -------------------- */
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
+    void cpe_init(const uint8_t key[CPE_KEY_LEN]);
 
-/** Initialise la couche crypto du protocole.
- *  @param key  clé AES‑128 partagée (16 octets)
- */
-void cpe_init(const uint8_t key[CPE_KEY_LEN]);
+    void cpe_build_measure_frame(const cpe_measure_t *m,
+                                 uint8_t device_id,
+                                 uint8_t seq,
+                                 uint8_t out_frame[CPE_PAYLOAD_LEN]);
 
-/** Construit (encode + chiffre) une trame radio CPE.
- *  @param m         mesures à encoder
- *  @param seq       numéro de séquence (0‑255) – sert de nonce
- *  @param out_frame tampon d'au moins CPE_PAYLOAD_LEN octets
- */
-void cpe_build_frame(const cpe_measure_t *m, uint8_t seq, uint8_t out_frame[CPE_PAYLOAD_LEN]);
+    void cpe_build_control_frame(uint8_t ctrl_byte,
+                                 uint8_t device_id,
+                                 uint8_t seq,
+                                 uint8_t out_frame[CPE_PAYLOAD_LEN]);
 
-/** Parse (déchiffre + décode) une trame CPE reçue.
- *  @param frame     tableau de CPE_PAYLOAD_LEN octets
- *  @param measures  structure en sortie
- *  @return 0 si OK, ‑1 si erreur
- */
-int  cpe_parse_frame(const uint8_t frame[CPE_PAYLOAD_LEN], cpe_measure_t *measures);
+    /* parse : remplit selon le type                                         */
+    int cpe_parse_frame(const uint8_t frame[CPE_PAYLOAD_LEN],
+                        cpe_frame_type_t *type_out,
+                        uint8_t *dev_id_out,
+                        cpe_measure_t *meas_out, /* NULL si pas utile   */
+                        uint8_t *ctrl_out);      /* NULL si pas utile   */
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* CPE_H */
