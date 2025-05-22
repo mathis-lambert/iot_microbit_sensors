@@ -23,7 +23,7 @@
 #include <cstdlib>
 
 #define RADIO_GROUP 42
-#define DEVICE_ID 0x01 /* identifiant unique pour ce micro:bit */
+#define DEVICE_ID 0x02 /* identifiant unique pour ce micro:bit */
 
 static const uint8_t KEY[16] = {
     0x00, 0x01, 0x02, 0x03,
